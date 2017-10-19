@@ -6,7 +6,7 @@ public class TxHandler {
      * constructor.
      */
     public TxHandler(UTXOPool utxoPool) {
-        // IMPLEMENT THIS
+        this.utxoPool = new UTXOPool(utxoPool);
     }
 
     /**
@@ -19,7 +19,47 @@ public class TxHandler {
      *     values; and false otherwise.
      */
     public boolean isValidTx(Transaction tx) {
-        // IMPLEMENT THIS
+        UTXOPool seenUTXOs = new UTXOPool();
+        double ConsumedCoinSum = 0;
+        double valueProducedSum = 0;
+        int i = 0;
+
+        for (i < tx.numInputs(); i++){
+            Transaction.Input in = tx.getInput(i);
+
+            UTXO utxo = new UTXO(in.prevTxHash, in.outputIndex);
+            Transaction.Output output = utxoPool.getTxOutput(utxo);
+
+            if (!utxoPool.contains(utxo)){
+                //1st condition verified
+                return false;
+            }
+
+            if (!Crypto.verifySignature(output.address, tx.getRawDataToSign(i), in.signature)){
+                //2nd condition verified
+                return false;
+            }
+            if (seenUTXOs.contains(utxo)){
+                //3rd condition verified
+                return false;
+            }
+
+            seenUTXOs.addUTXO(utxo, output);
+            ConsumedCoinSum += output.value;
+        }
+
+        for (Transaction.Output out : tx.getOutputs()){
+            if (out.value < 0){
+                // 4th conditon verified
+                return false;
+            }
+            valueProducedSum += out.value;
+        }
+        
+        if (valueProducedSum < ConsumedCoinSum){
+            // 5th condition verified
+            return false;
+        }
     }
 
     /**
@@ -28,7 +68,47 @@ public class TxHandler {
      * updating the current UTXO pool as appropriate.
      */
     public Transaction[] handleTxs(Transaction[] possibleTxs) {
-        // IMPLEMENT THIS
+        ArrayList<Transaction> validTransactionsArrayList = new ArrayList<>();
+
+        boolean done = false;
+
+        while(!done){
+            done = true;
+
+            for(int i = 0; i < possibleTxs.length; i++){
+                if(possibleTxs[i] == null){
+                    continue;
+                }
+
+                if(isValidTx(possibleTxs[i])){
+                    ArrayList<Transaction.Input> inputs = possibleTxs[i].getInputs();
+                    for(int j = 0; j < inputs.size(); j++){
+                        Transaction.Input tempInput = inputs.get(j);
+                        UTXO tempUTXO = new UTXO(tempInput.prevTxHash, tempInput.outputIndex);
+                        //remove this UTXO because it has now been consumed
+                        utxoPool.removeUTXO(tempUTXO);
+                    }
+
+                    ArrayList<Transaction.Output> outputs = possibleTxs[i].getOutputs();
+                    for(int j = 0; j < outputs.size(); j++){
+                        Transaction.Output tempOutput = outputs.get(j);
+                        UTXO tempUTXO = new UTXO(possibleTxs[i].getHash(), j);
+                        utxoPool.addUTXO(tempUTXO, tempOutput);
+                    }
+
+                    validTransactionsArrayList.add(possibleTxs[i]);
+
+                    possibleTxs[i++] = null;
+
+                    done = false;
+                }
+            }
+        }
+
+        Transaction[] validTransactions = new Transaction[validTransactionsArrayList.size()];
+        validTransactions = validTransactionsArrayList.toArray(validTransactions);
+        return validTransactions;
+        
     }
 
 }
