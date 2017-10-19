@@ -1,3 +1,7 @@
+package assignment_1;
+
+import java.util.ArrayList;
+
 public class TxHandler {
 
     /**
@@ -22,9 +26,8 @@ public class TxHandler {
         UTXOPool seenUTXOs = new UTXOPool();
         double ConsumedCoinSum = 0;
         double valueProducedSum = 0;
-        int i = 0;
-
-        for (i < tx.numInputs(); i++){
+        
+        for (int i = 0; < tx.numInputs(); i++){
             Transaction.Input in = tx.getInput(i);
 
             UTXO utxo = new UTXO(in.prevTxHash, in.outputIndex);
@@ -108,7 +111,7 @@ public class TxHandler {
         Transaction[] validTransactions = new Transaction[validTransactionsArrayList.size()];
         validTransactions = validTransactionsArrayList.toArray(validTransactions);
         return validTransactions;
-        
+
     }
 
 }
