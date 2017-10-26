@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class TxHandler {
 
+    private UTXOPool utxoPool;
     /**
      * Creates a public ledger whose current UTXOPool (collection of unspent transaction outputs) is
      * {@code utxoPool}. This should make a copy of utxoPool by using the UTXOPool(UTXOPool uPool)
@@ -27,7 +28,7 @@ public class TxHandler {
         double ConsumedCoinSum = 0;
         double valueProducedSum = 0;
         
-        for (int i = 0; < tx.numInputs(); i++){
+        for (int i = 0; i < tx.numInputs(); i++){
             Transaction.Input in = tx.getInput(i);
 
             UTXO utxo = new UTXO(in.prevTxHash, in.outputIndex);
@@ -59,7 +60,7 @@ public class TxHandler {
             valueProducedSum += out.value;
         }
         
-        if (valueProducedSum < ConsumedCoinSum){
+        if (valueProducedSum > ConsumedCoinSum){
             // 5th condition verified
             return false;
         }
